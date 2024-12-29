@@ -35,7 +35,8 @@ webform.validators.chelt1 = function (v, allowOverpass) {
     
     validatePhoneNumber(values.PHONE);
     validate_CUATM_FILIAL(values);
-    validateRow100(values);
+    validateSumRows(values);
+    validateCol1EqualsCol2PlusCol3(values);
 
     webform.warnings.sort(function (a, b) {
         return sort_errors_warinings(a, b);
@@ -45,27 +46,83 @@ webform.validators.chelt1 = function (v, allowOverpass) {
     });
     webform.validatorsStatus["chelt1"] = 1;
     validateWebform();
+
 };
 
+//-------------------------------------------------------------------------------
+
+function validateCol1EqualsCol2PlusCol3(values) {
+    // Definim rândurile din CAP 1 care trebuie validate
+    let rows = [100, 101, 102, 103, 104, 105, 106, 107]; // Adaptați lista de rânduri, dacă este necesar
+
+    // Validare pentru datele generale (fără filiale)
+    rows.forEach(row => {
+        let col1 = Number(values[`CAP1_R${row}_C1`]);
+        let col2 = Number(values[`CAP1_R${row}_C2`]);
+        let col3 = Number(values[`CAP1_R${row}_C3`]);
+
+        // Validăm dacă valorile sunt numere, în caz contrar le considerăm 0
+        col1 = isNaN(col1) ? 0 : col1;
+        col2 = isNaN(col2) ? 0 : col2;
+        col3 = isNaN(col3) ? 0 : col3;
+
+        if (col1 !== col2 + col3) {
+            webform.errors.push({
+                fieldName: `CAP1_R${row}_C1`,
+                weight: 1,
+                msg: `Cod eroare: 60-002 (Rînd.${row}) - (Col.1) = (Col.2) + (Col.3) - [${col1} ≠ ${col2} + ${col3}]`,
+            });
+        }
+    });
+
+    // Validare pentru datele din filiale
+    let numFilials = values.CAP_NUM_FILIAL ? values.CAP_NUM_FILIAL.length : 0; // Numărul de filiale
+
+    for (let i = 0; i < numFilials; i++) {
+        rows.forEach(row => {
+            let col1 = Number(values[`CAP1_R${row}_C1_FILIAL`][i]);
+            let col2 = Number(values[`CAP1_R${row}_C2_FILIAL`][i]);
+            let col3 = Number(values[`CAP1_R${row}_C3_FILIAL`][i]);
+
+            // Validăm dacă valorile sunt numere, în caz contrar le considerăm 0
+            col1 = isNaN(col1) ? 0 : col1;
+            col2 = isNaN(col2) ? 0 : col2;
+            col3 = isNaN(col3) ? 0 : col3;
+
+            if (col1 !== col2 + col3) {
+                webform.errors.push({
+                    fieldName: `CAP1_R${row}_C1_FILIAL`,
+                    index: i,
+                    weight: 2,
+                    msg: `Cod eroare: 60-002 (Rînd.${row}, Filiala ${i + 1}) - (Col.1) = (Col.2) + (Col.3) - [${col1} ≠ ${col2} + ${col3}]`,
+                });
+            }
+        });
+    }
+}
+
+
 //-----------------------------------------------------------------------
-function validateRow100(values) {
-    // Definim variabilele pentru fiecare coloană a rândurilor 100-107
-    let columns = ["C1", "C2", "C3", "C4"]; // Adaptați în funcție de coloanele disponibile
+function validateSumRows(values) {
+    // Definim rândurile pentru validare și coloanele disponibile
+    let columns = ["C1", "C2", "C3", "C4"]; // Adaptați lista coloanelor dacă este necesar
+    let rowsToSum = [101, 102, 103, 104, 105, 106, 107]; // Rândurile care trebuie însumate
 
     // Validare pentru datele generale (fără filiale)
     columns.forEach(col => {
-        let r100 = Number(values[`CAP1_R100_${col}`]) || 0;
-        let sumR101ToR107 = 0;
+        let r100 = Number(values[`CAP1_R100_${col}`]);
+        r100 = isNaN(r100) ? 0 : r100;
 
-        for (let row = 101; row <= 107; row++) {
-            sumR101ToR107 += Number(values[`CAP1_R${row}_${col}`]) || 0;
-        }
+        let sum = rowsToSum.reduce((acc, row) => {
+            let value = Number(values[`CAP1_R${row}_${col}`]);
+            return acc + (isNaN(value) ? 0 : value);
+        }, 0);
 
-        if (r100 !== sumR101ToR107) {
+        if (r100 !== sum) {
             webform.errors.push({
                 fieldName: `CAP1_R100_${col}`,
                 weight: 1,
-                msg: `Cod eroare: 60-001 (Rînd.100) = SUM(Rînd.101 - Rînd.107) (Col.${col}) - [${r100} ≠ ${sumR101ToR107}]`,
+                msg: `Cod eroare: 60-001 (Col.${col}) - (Rînd.100) = SUM(Rînd.101 - Rînd.107) - [${r100} ≠ ${sum}]`,
             });
         }
     });
@@ -75,24 +132,26 @@ function validateRow100(values) {
 
     for (let i = 0; i < numFilials; i++) {
         columns.forEach(col => {
-            let r100 = Number(values[`CAP1_R100_${col}_FILIAL`][i]) || 0;
-            let sumR101ToR107 = 0;
+            let r100 = Number(values[`CAP1_R100_${col}_FILIAL`][i]);
+            r100 = isNaN(r100) ? 0 : r100;
 
-            for (let row = 101; row <= 107; row++) {
-                sumR101ToR107 += Number(values[`CAP1_R${row}_${col}_FILIAL`][i]) || 0;
-            }
+            let sum = rowsToSum.reduce((acc, row) => {
+                let value = Number(values[`CAP1_R${row}_${col}_FILIAL`][i]);
+                return acc + (isNaN(value) ? 0 : value);
+            }, 0);
 
-            if (r100 !== sumR101ToR107) {
+            if (r100 !== sum) {
                 webform.errors.push({
                     fieldName: `CAP1_R100_${col}_FILIAL`,
                     index: i,
-                    weight: 1,
-                    msg: `Cod eroare: 60-001  (Rînd.100) = SUM(Rînd.101 - Rînd.107) (Col.${col}, Filiala ${i + 1}) - [${r100} ≠ ${sumR101ToR107}]`,
+                    weight: 2,
+                    msg: `Cod eroare: 60-001 (Col.${col}, Filiala ${i + 1}) - (Rînd.100) = SUM(Rînd.101 - Rînd.107) - [${r100} ≠ ${sum}]`,
                 });
             }
         });
     }
 }
+
 
 //----------------------------------------------------------------------
 function validateFieldNoHieroglyphs(fieldName, fieldValue) {
