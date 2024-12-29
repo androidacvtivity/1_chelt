@@ -23,40 +23,7 @@
 webform.validators.chelt1 = function (v, allowOverpass) {
     var values = Drupal.settings.mywebform.values;
 
-    // Checking  telefon
-    if (!values.PHONE || !/^[0-9]{9}$/.test(values.PHONE)) {
-        webform.errors.push({
-            fieldName: "PHONE",
-            weight: 29,
-            // 'msg': Drupal.t(' Cod eroare: A.09 Introduceți doar un număr de telefon format din 9 cifre')
-            msg: concatMessage(
-                "A.09",
-                "",
-                Drupal.t("Introduceți doar un număr de telefon format din 9 cifre")
-            ),
-        });
-    }
-
-    // Check if the first digit is 0
-    if (values.PHONE && values.PHONE[0] !== "0") {
-        webform.errors.push({
-            fieldName: "PHONE",
-            weight: 30,
-            // 'msg': Drupal.t(' Cod eroare: A.09 Prima cifră a numărului de telefon trebuie să fie 0')
-
-            msg: concatMessage(
-                "A.09",
-                "",
-                Drupal.t("Prima cifră a numărului de telefon trebuie să fie 0")
-            ),
-        });
-    }
-    //End  Checking  telefon
-
-    
-    
-    // End dynamic validations ------------------------------------------------------------------------------------------------
-
+    validatePhoneNumber(phone);
     webform.warnings.sort(function (a, b) {
         return sort_errors_warinings(a, b);
     });
@@ -66,6 +33,26 @@ webform.validators.chelt1 = function (v, allowOverpass) {
     webform.validatorsStatus["chelt1"] = 1;
     validateWebform();
 };
+
+function validatePhoneNumber(phone) {
+    // Check if the phone number is valid (exactly 9 digits)
+    if (!phone || !/^[0-9]{9}$/.test(phone)) {
+        webform.errors.push({
+            'fieldName': 'PHONE',
+            'weight': 29,
+            'msg': concatMessage('A.09', '', Drupal.t('Introduceți doar un număr de telefon format din 9 cifre'))
+        });
+    }
+
+    // Check if the first digit is 0
+    if (phone && phone[0] !== '0') {
+        webform.errors.push({
+            'fieldName': 'PHONE',
+            'weight': 30,
+            'msg': concatMessage('A.09', '', Drupal.t('Prima cifră a numărului de telefon trebuie să fie 0'))
+        });
+    }
+}
 
 function concatMessage(errorCode, fieldTitle, msg) {
     var titleParts = [];
