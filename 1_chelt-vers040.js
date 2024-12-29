@@ -37,6 +37,7 @@ webform.validators.chelt1 = function (v, allowOverpass) {
     validate_CUATM_FILIAL(values);
     validateSumRows(values);
     validateCol1EqualsCol2PlusCol3(values);
+    validate60_003(values);
 
     webform.warnings.sort(function (a, b) {
         return sort_errors_warinings(a, b);
@@ -48,6 +49,56 @@ webform.validators.chelt1 = function (v, allowOverpass) {
     validateWebform();
 
 };
+
+
+//--------------------------------------------------
+
+function validate60_003(values) {
+    // Definim coloanele pentru validare
+    let columns = ["C1", "C2", "C3", "C4"]; // Adaptați lista coloanelor dacă este necesar
+
+    // Validare pentru datele generale (fără filiale)
+    columns.forEach(col => {
+        let r108 = Number(values[`CAP1_R108_${col}`]);
+        let r100 = Number(values[`CAP1_R100_${col}`]);
+
+        // Validăm dacă valorile sunt numere, în caz contrar le considerăm 0
+        r108 = isNaN(r108) ? 0 : r108;
+        r100 = isNaN(r100) ? 0 : r100;
+
+        if (r108 > r100) {
+            webform.errors.push({
+                fieldName: `CAP1_R108_${col}`,
+                weight: 1,
+                msg: `Cod eroare: 60-003 -  (Rînd.108) <= (Rînd.100) (Col.${col}) - [${r108} > ${r100}]`,
+            });
+        }
+    });
+
+    // Validare pentru datele din filiale
+    let numFilials = values.CAP_NUM_FILIAL ? values.CAP_NUM_FILIAL.length : 0; // Numărul de filiale
+
+    for (let i = 0; i < numFilials; i++) {
+        columns.forEach(col => {
+            let r108 = Number(values[`CAP1_R108_${col}_FILIAL`][i]);
+            let r100 = Number(values[`CAP1_R100_${col}_FILIAL`][i]);
+
+            // Validăm dacă valorile sunt numere, în caz contrar le considerăm 0
+            r108 = isNaN(r108) ? 0 : r108;
+            r100 = isNaN(r100) ? 0 : r100;
+
+            if (r108 > r100) {
+                webform.errors.push({
+                    fieldName: `CAP1_R108_${col}_FILIAL`,
+                    index: i,
+                    weight: 2,
+                    msg: `Cod eroare: 60-003 - (Rînd.108) <= (Rînd.100) (Col.${col}, Filiala ${i + 1}) - [${r108} > ${r100}]`,
+                });
+            }
+        });
+    }
+}
+
 
 //-------------------------------------------------------------------------------
 
