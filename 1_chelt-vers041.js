@@ -38,6 +38,7 @@ webform.validators.chelt1 = function (v, allowOverpass) {
     validateSumRows(values);
     validateCol1EqualsCol2PlusCol3(values);
     validate60_003(values);
+    validateRow108Col1EqualsCol2(values);
 
     webform.warnings.sort(function (a, b) {
         return sort_errors_warinings(a, b);
@@ -49,6 +50,48 @@ webform.validators.chelt1 = function (v, allowOverpass) {
     validateWebform();
 
 };
+
+
+
+//---------------------------------------------------------
+function validateRow108Col1EqualsCol2(values) {
+    // Validare pentru datele generale (fără filiale)
+    let col1 = Number(values[`CAP1_R108_C1`]);
+    let col2 = Number(values[`CAP1_R108_C2`]);
+
+    // Validăm dacă valorile sunt numere, în caz contrar le considerăm 0
+    col1 = isNaN(col1) ? 0 : col1;
+    col2 = isNaN(col2) ? 0 : col2;
+
+    if (col1 !== col2) {
+        webform.errors.push({
+            fieldName: `CAP1_R108_C1`,
+            weight: 1,
+            msg: `Cod eroare: 60-004 (Rînd.108) - (Col.1) = (Col.2) - [${col1} ≠ ${col2}]`,
+        });
+    }
+
+    // Validare pentru datele din filiale
+    let numFilials = values.CAP_NUM_FILIAL ? values.CAP_NUM_FILIAL.length : 0; // Numărul de filiale
+
+    for (let i = 0; i < numFilials; i++) {
+        let col1Filial = Number(values[`CAP1_R108_C1_FILIAL`][i]);
+        let col2Filial = Number(values[`CAP1_R108_C2_FILIAL`][i]);
+
+        // Validăm dacă valorile sunt numere, în caz contrar le considerăm 0
+        col1Filial = isNaN(col1Filial) ? 0 : col1Filial;
+        col2Filial = isNaN(col2Filial) ? 0 : col2Filial;
+
+        if (col1Filial !== col2Filial) {
+            webform.errors.push({
+                fieldName: `CAP1_R108_C1_FILIAL`,
+                index: i,
+                weight: 2,
+                msg: `Cod eroare: 60-004 (Rînd.108, Filiala ${i + 1}) - (Col.1) = (Col.2) - [${col1Filial} ≠ ${col2Filial}]`,
+            });
+        }
+    }
+}
 
 
 //--------------------------------------------------
