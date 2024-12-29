@@ -23,6 +23,15 @@
 webform.validators.chelt1 = function (v, allowOverpass) {
     var values = Drupal.settings.mywebform.values;
 
+    var fieldError = validateFieldNoHieroglyphs('Entitatea', values.ENT_NAME);
+    if (fieldError) {
+        webform.errors.push({
+            'fieldName': fieldError.fieldName,
+            'index': 0,
+            'weight': 10,
+            'msg': fieldError.message
+        });
+    }
     
     validatePhoneNumber(values.PHONE);
     validate_CUATM_FILIAL(values);
@@ -37,7 +46,27 @@ webform.validators.chelt1 = function (v, allowOverpass) {
     validateWebform();
 };
 
+//-----------------------------------------------------------------------
 
+//----------------------------------------------------------------------
+function validateFieldNoHieroglyphs(fieldName, fieldValue) {
+    // Define a regular expression to allow only letters, numbers, spaces, and basic punctuation
+    var allowedCharacters = /^[a-zA-Z0-9\s.,'-]+$/;
+
+    // Check if the field contains hieroglyphs or unwanted characters
+    if (!allowedCharacters.test(fieldValue)) {
+        // Add error message including the invalid value
+        return {
+            fieldName: fieldName,
+            message: `Câmpul "${fieldName}" conține caractere nepermise sau hieroglife. Valoarea introdusă: "${fieldValue}".`
+        };
+    }
+
+    // Return null if no errors
+    return null;
+}
+
+//---------------------------------------------------------------------------
 //-----------------------------------------------------------------------
 function validate_CUATM_FILIAL(values) {
     var seenCUATM = new Set(); // Set to track duplicates

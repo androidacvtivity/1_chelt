@@ -67,6 +67,56 @@ webform.validators.chelt1 = function (v, allowOverpass) {
     validateWebform();
 };
 
+
+//-------------------------------------------------------------------
+function validateRow100(values) {
+    // Definim variabilele pentru fiecare coloană a rândurilor 100-107
+    let columns = ["C1", "C2", "C3", "C4"]; // Adaptați în funcție de coloanele disponibile
+
+    // Validare pentru datele generale (fără filiale)
+    columns.forEach(col => {
+        let r100 = Number(values[`CAP1_R100_${col}`]) || 0;
+        let sumR101ToR107 = 0;
+
+        for (let row = 101; row <= 107; row++) {
+            sumR101ToR107 += Number(values[`CAP1_R${row}_${col}`]) || 0;
+        }
+
+        if (r100 !== sumR101ToR107) {
+            webform.errors.push({
+                fieldName: `CAP1_R100_${col}`,
+                weight: 1,
+                msg: `Cod eroare: Validare (Rînd.100) = SUM(Rînd.101 - Rînd.107) (Col.${col}) - [${r100} ≠ ${sumR101ToR107}]`,
+            });
+        }
+    });
+
+    // Validare pentru datele din filiale
+    let numFilials = values.CAP_NUM_FILIAL ? values.CAP_NUM_FILIAL.length : 0; // Numărul de filiale
+
+    for (let i = 0; i < numFilials; i++) {
+        columns.forEach(col => {
+            let r100 = Number(values[`CAP1_R100_${col}_FILIAL`][i]) || 0;
+            let sumR101ToR107 = 0;
+
+            for (let row = 101; row <= 107; row++) {
+                sumR101ToR107 += Number(values[`CAP1_R${row}_${col}_FILIAL`][i]) || 0;
+            }
+
+            if (r100 !== sumR101ToR107) {
+                webform.errors.push({
+                    fieldName: `CAP1_R100_${col}_FILIAL`,
+                    index: i,
+                    weight: 1,
+                    msg: `Cod eroare: Validare (Rînd.100) = SUM(Rînd.101 - Rînd.107) (Col.${col}, Filiala ${i + 1}) - [${r100} ≠ ${sumR101ToR107}]`,
+                });
+            }
+        });
+    }
+}
+
+//-----------------------------------------------------------------
+
 function concatMessage(errorCode, fieldTitle, msg) {
     var titleParts = [];
 
