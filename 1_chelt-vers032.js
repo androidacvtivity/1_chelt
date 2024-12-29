@@ -23,7 +23,8 @@
 webform.validators.chelt1 = function (v, allowOverpass) {
     var values = Drupal.settings.mywebform.values;
 
-    validatePhoneNumber(phone);
+    
+    validatePhoneNumber(values.PHONE);
     webform.warnings.sort(function (a, b) {
         return sort_errors_warinings(a, b);
     });
