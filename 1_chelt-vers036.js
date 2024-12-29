@@ -25,6 +25,8 @@ webform.validators.chelt1 = function (v, allowOverpass) {
 
     
     validatePhoneNumber(values.PHONE);
+    validate_CUATM_FILIAL(values);
+
     webform.warnings.sort(function (a, b) {
         return sort_errors_warinings(a, b);
     });
@@ -35,6 +37,49 @@ webform.validators.chelt1 = function (v, allowOverpass) {
     validateWebform();
 };
 
+
+//-----------------------------------------------------------------------
+function validate_CUATM_FILIAL(values) {
+    var seenCUATM = new Set(); // Set to track duplicates
+
+    for (var j = 0; j < values.CAP_NUM_FILIAL.length; j++) {
+        var CAP_CUATM_FILIAL = String(values.CAP_CUATM_FILIAL[j] || "").trim(); // Safely handle undefined or null
+        var CAP_NUM_FILIAL = Number(values.CAP_NUM_FILIAL[j]);
+        
+
+        // Check if CAP_NUM_FILIAL exists but CAP_CUATM_FILIAL is missing
+        if (CAP_NUM_FILIAL && CAP_CUATM_FILIAL === "") {
+            webform.errors.push({
+                'fieldName': 'CAP_CUATM_FILIAL',
+                'index': j,
+                'weight': 20,
+                'msg': Drupal.t('Raion: @CAP_NUM_FILIAL - Cod eroare: 60-007.  - Dacă există Nr. [@CAP_NUM_FILIAL], atunci trebuie să existe și cod CUATM.', {
+                    '@CAP_NUM_FILIAL': CAP_NUM_FILIAL,
+                    '@CAP_CUATM_FILIAL': CAP_CUATM_FILIAL
+                })
+            });
+        }
+
+        // Check for duplicate CAP_CUATM_FILIAL values
+        if (CAP_CUATM_FILIAL) {
+            if (seenCUATM.has(CAP_CUATM_FILIAL)) {
+                webform.errors.push({
+                    'fieldName': 'CAP_CUATM_FILIAL',
+                    'index': j,
+                    'weight': 10,
+                    'msg': Drupal.t('Codul CUATM: @CAP_CUATM_FILIAL  este duplicat. Fiecare cod CUATM trebuie să fie unic.', {
+                        '@CAP_CUATM_FILIAL': CAP_CUATM_FILIAL
+                    })
+                });
+            } else {
+                seenCUATM.add(CAP_CUATM_FILIAL);
+            }
+        }
+    }
+}
+
+
+//-----------------------------------------------------------------------
 function validatePhoneNumber(phone) {
     // Check if the phone number is valid (exactly 9 digits)
     if (!phone || !/^[0-9]{9}$/.test(phone)) {
