@@ -40,6 +40,7 @@ webform.validators.chelt1 = function (v, allowOverpass) {
     validate60_003(values);
     validateRow108Col1EqualsCol2(values);
     validateCap2Row200Sum(values);
+    validateCap2Row300Sum(values)
 
     webform.warnings.sort(function (a, b) {
         return sort_errors_warinings(a, b);
@@ -51,22 +52,74 @@ webform.validators.chelt1 = function (v, allowOverpass) {
     validateWebform();
 
 };
+//----------------------------------------------------------------------
 
-//---------------------------------------------------------------------
 
-function validateCap2Row200Sum(values) {
-    // Definim coloanele pentru validare
-    let columns = ["C1", "C2", "C3", "C4"]; // Adaptați lista coloanelor dacă este necesar
-    let rowsToSum = [201, 202, 203]; // Rândurile care trebuie însumate pentru validare
+function validateCap2Row300Sum(values) {
+    // Define columns and rows for validation
+    let columns = ["C1", "C2", "C3", "C4"]; // Adapt column list if necessary
+    let rowsToSum = [301, 302, 303]; // Rows to sum for validation
 
-    // Validare pentru datele generale (fără filiale)
+    // Validation for general data (without filials)
     columns.forEach(col => {
-        let r200 = Number(values[`CAP2_R200_${col}`]);
-        r200 = isNaN(r200) ? 0 : r200;
+        let r300 = Number(values[`CAP2_R300_${col}`] || 0); // Default to 0 if undefined
 
         let sum = rowsToSum.reduce((acc, row) => {
-            let value = Number(values[`CAP2_R${row}_${col}`]);
-            return acc + (isNaN(value) ? 0 : value);
+            let value = Number(values[`CAP2_R${row}_${col}`] || 0); // Default to 0 if undefined
+            return acc + value;
+        }, 0);
+
+        if (r300 !== sum) {
+            webform.errors.push({
+                fieldName: `CAP2_R300_${col}`,
+                weight: 1,
+                msg: `Cod eroare: 60-006 (Col.${col}) - (Rînd.300) = SUM(Rînd.301 - Rînd.303) - [${r300} ≠ ${sum}]`,
+            });
+        }
+    });
+
+    // Validation for filial data
+    let numFilials = values.CAP_NUM_FILIAL ? values.CAP_NUM_FILIAL.length : 0; // Number of filials
+
+    for (let i = 0; i < numFilials; i++) {
+        columns.forEach(col => {
+            let r300Filial = Number(
+                (values[`CAP2_R300_${col}_FILIAL`] && values[`CAP2_R300_${col}_FILIAL`][i]) || 0
+            ); // Default to 0 if undefined
+
+            let sumFilial = rowsToSum.reduce((acc, row) => {
+                let value = Number(
+                    (values[`CAP2_R${row}_${col}_FILIAL`] && values[`CAP2_R${row}_${col}_FILIAL`][i]) || 0
+                ); // Default to 0 if undefined
+                return acc + value;
+            }, 0);
+
+            if (r300Filial !== sumFilial) {
+                webform.errors.push({
+                    fieldName: `CAP2_R300_${col}_FILIAL`,
+                    index: i,
+                    weight: 2,
+                    msg: `Cod eroare: 60-006 (Col.${col}, Filiala ${i + 1}) - (Rînd.300) = SUM(Rînd.301 - Rînd.303) - [${r300Filial} ≠ ${sumFilial}]`,
+                });
+            }
+        });
+    }
+}
+
+
+//---------------------------------------------------------------------
+function validateCap2Row200Sum(values) {
+    // Define columns and rows for validation
+    let columns = ["C1", "C2", "C3", "C4"]; // Adapt column list if necessary
+    let rowsToSum = [201, 202, 203]; // Rows to sum for validation
+
+    // Validation for general data (without filials)
+    columns.forEach(col => {
+        let r200 = Number(values[`CAP2_R200_${col}`] || 0); // Default to 0 if undefined
+
+        let sum = rowsToSum.reduce((acc, row) => {
+            let value = Number(values[`CAP2_R${row}_${col}`] || 0); // Default to 0 if undefined
+            return acc + value;
         }, 0);
 
         if (r200 !== sum) {
@@ -78,17 +131,21 @@ function validateCap2Row200Sum(values) {
         }
     });
 
-    // Validare pentru datele din filiale
-    let numFilials = values.CAP_NUM_FILIAL ? values.CAP_NUM_FILIAL.length : 0; // Numărul de filiale
+    // Validation for filial data
+    let numFilials = values.CAP_NUM_FILIAL ? values.CAP_NUM_FILIAL.length : 0; // Number of filials
 
     for (let i = 0; i < numFilials; i++) {
         columns.forEach(col => {
-            let r200Filial = Number(values[`CAP2_R200_${col}_FILIAL`][i]);
-            r200Filial = isNaN(r200Filial) ? 0 : r200Filial;
+            // Safely access filial values, default to 0 if undefined
+            let r200Filial = Number(
+                (values[`CAP2_R200_${col}_FILIAL`] && values[`CAP2_R200_${col}_FILIAL`][i]) || 0
+            );
 
             let sumFilial = rowsToSum.reduce((acc, row) => {
-                let value = Number(values[`CAP2_R${row}_${col}_FILIAL`][i]);
-                return acc + (isNaN(value) ? 0 : value);
+                let value = Number(
+                    (values[`CAP2_R${row}_${col}_FILIAL`] && values[`CAP2_R${row}_${col}_FILIAL`][i]) || 0
+                );
+                return acc + value;
             }, 0);
 
             if (r200Filial !== sumFilial) {
