@@ -39,6 +39,7 @@ webform.validators.chelt1 = function (v, allowOverpass) {
     validateCol1EqualsCol2PlusCol3(values);
     validate60_003(values);
     validateRow108Col1EqualsCol2(values);
+    validateCap2Row200Sum(values);
 
     webform.warnings.sort(function (a, b) {
         return sort_errors_warinings(a, b);
@@ -51,6 +52,56 @@ webform.validators.chelt1 = function (v, allowOverpass) {
 
 };
 
+//---------------------------------------------------------------------
+
+function validateCap2Row200Sum(values) {
+    // Definim coloanele pentru validare
+    let columns = ["C1", "C2", "C3", "C4"]; // Adaptați lista coloanelor dacă este necesar
+    let rowsToSum = [201, 202, 203]; // Rândurile care trebuie însumate pentru validare
+
+    // Validare pentru datele generale (fără filiale)
+    columns.forEach(col => {
+        let r200 = Number(values[`CAP2_R200_${col}`]);
+        r200 = isNaN(r200) ? 0 : r200;
+
+        let sum = rowsToSum.reduce((acc, row) => {
+            let value = Number(values[`CAP2_R${row}_${col}`]);
+            return acc + (isNaN(value) ? 0 : value);
+        }, 0);
+
+        if (r200 !== sum) {
+            webform.errors.push({
+                fieldName: `CAP2_R200_${col}`,
+                weight: 1,
+                msg: `Cod eroare: 60-005 (Col.${col}) - (Rînd.200) = SUM(Rînd.201 - Rînd.203) - [${r200} ≠ ${sum}]`,
+            });
+        }
+    });
+
+    // Validare pentru datele din filiale
+    let numFilials = values.CAP_NUM_FILIAL ? values.CAP_NUM_FILIAL.length : 0; // Numărul de filiale
+
+    for (let i = 0; i < numFilials; i++) {
+        columns.forEach(col => {
+            let r200Filial = Number(values[`CAP2_R200_${col}_FILIAL`][i]);
+            r200Filial = isNaN(r200Filial) ? 0 : r200Filial;
+
+            let sumFilial = rowsToSum.reduce((acc, row) => {
+                let value = Number(values[`CAP2_R${row}_${col}_FILIAL`][i]);
+                return acc + (isNaN(value) ? 0 : value);
+            }, 0);
+
+            if (r200Filial !== sumFilial) {
+                webform.errors.push({
+                    fieldName: `CAP2_R200_${col}_FILIAL`,
+                    index: i,
+                    weight: 2,
+                    msg: `Cod eroare: 60-005 (Col.${col}, Filiala ${i + 1}) - (Rînd.200) = SUM(Rînd.201 - Rînd.203) - [${r200Filial} ≠ ${sumFilial}]`,
+                });
+            }
+        });
+    }
+}
 
 
 //---------------------------------------------------------
